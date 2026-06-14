@@ -36,7 +36,7 @@ def run_json_command(cmd: list[str], timeout: int) -> Any:
         text=True,
         timeout=timeout,
         env=os.environ.copy(),
-        cwd=str(ROOT.parent.parent.parent),
+        cwd=str(ROOT),
     )
     if proc.returncode != 0:
         raise RuntimeError(f"command failed: {' '.join(cmd)}\n{proc.stderr.strip()}")

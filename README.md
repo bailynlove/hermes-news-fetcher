@@ -1,99 +1,55 @@
-# AI News Aggregator
+# ai-news-fetcher
 
-[English](./README_EN.md) | 中文
+Hermes-agent 兼容版 AI 新闻聚合 skill，从 [`ai-news-aggregator`](../ai-news-aggregator/) 包装而来。
 
-高性能 AI/技术新闻聚合引擎，专为 OpenClaw Agent 设计。并发抓取 100+ RSS 源，支持兴趣评分、跨天去重、日期过滤。
+## What's different from the original?
 
-## 特性
+| 项 | ai-news-aggregator | ai-news-fetcher (本目录) |
+|----|--------------------|--------------------------|
+| 目标宿主 | OpenClaw / Claude Code | Hermes Agent |
+| frontmatter | 完整字段 (slug/version/changelog/metadata...) | 仅 `name` + `description`（Hermes allowlist） |
+| 路径前缀 | `skills/ai-news-aggregator/` | `.hermes/skills/ai-news-fetcher/` |
+| 工具术语 | Bash / Read / Write | terminal / read_file / patch |
+| 文档命名 | CLAUDE.md / SKILL.md | AGENTS.md / SKILL.md |
+| 核心脚本 | 同源（已修复一处硬编码 cwd） | 同上 |
 
-- ⚡ **高性能**: 20 线程并发，100+ 源 12 秒完成
-- 💾 **智能缓存**: ETag/Last-Modified + 跨天 URL 去重（7 天窗口）
-- 🎯 **兴趣评分**: 按用户兴趣标签排序（agent/skills/mcp/工程实践等）
-- 📅 **日期过滤**: `--days N` 抓取最近 N 天新闻
-- 📊 **100+ RSS 源**: 8 大分类覆盖 AI 全生态
-- 🔬 **arXiv 集成**: AI/ML/NLP 最新论文
-- 📈 **GitHub Trending**: AI 热门项目追踪
-- 🔄 **统一预取**: `prefetch_data.sh` 一键并行获取所有数据源
+## Files
 
-## 安装
+```
+ai-news-fetcher/
+├── README.md                  # 本文件
+├── SKILL.md                   # Hermes skill 描述（已 allowlist frontmatter）
+└── scripts/
+    ├── arxiv_papers.py
+    ├── build_digest_input.py  # 已修复 cwd 路径假设
+    ├── build_reflection_index.py
+    ├── gen_status.py
+    ├── github_trending.py
+    ├── prefetch_data.sh
+    ├── rss_aggregator.py
+    ├── rss_sources.json
+    └── summarize_url.py
+```
 
-### 通过 ClawHub（推荐）
+## Install (Hermes)
 
 ```bash
-clawhub install ai-news-aggregator
-clawhub update ai-news-aggregator
+# 复制到 hermes skill root
+cp -r ai-news-fetcher ~/.hermes/skills/
+
+# 或在项目本地安装
+mkdir -p .hermes/skills && cp -r ai-news-fetcher .hermes/skills/
 ```
 
-### 手动克隆
+## Quick test
 
 ```bash
-git clone https://github.com/lanyasheng/ai-news-aggregator.git
-cd ai-news-aggregator
-# 纯标准库，无需安装依赖，需要 Python 3.8+
+# 直接跑预取
+bash ~/.hermes/skills/ai-news-fetcher/scripts/prefetch_data.sh
+ls -la /tmp/ainews_prefetch/
+cat /tmp/ainews_prefetch/status.json
 ```
 
-## 使用
+## License
 
-### 统一预取（推荐，用于定时任务）
-
-```bash
-# 一键并行获取 RSS + GitHub + arXiv，输出到 /tmp/ainews_prefetch/
-bash scripts/prefetch_data.sh
-```
-
-### 单独使用
-
-```bash
-# RSS 聚合（支持分类和日期过滤）
-python3 scripts/rss_aggregator.py --category all --days 1 --limit 10 --json
-
-# 构建摘要输入（兴趣评分 + 去重 + 排序）
-python3 scripts/build_digest_input.py --out /tmp/digest.json --days 2 --max-total 40
-
-# arXiv 论文
-python3 scripts/arxiv_papers.py --top 8 --json
-
-# GitHub AI Trending
-python3 scripts/github_trending.py --ai-only --limit 10 --json
-```
-
-### 分类说明
-
-| 分类 | 源数 | 说明 |
-|------|------|------|
-| company | 16 | OpenAI, Anthropic, Google, Meta, NVIDIA 等官方博客 |
-| papers | 6 | arXiv, HuggingFace Daily Papers, BAIR |
-| media | 16 | MIT Tech Review, TechCrunch, Wired, VentureBeat |
-| newsletter | 15 | Simon Willison, Lilian Weng, Andrew Ng, Karpathy |
-| community | 12 | HN, GitHub Trending, Product Hunt, V2EX |
-| cn_media | 5 | 机器之心, 量子位, 36氪, 少数派, InfoQ |
-| ai-agent | 5 | LangChain, LlamaIndex, Mem0, Ollama, vLLM |
-| twitter | 10 | Sam Altman, Karpathy, LeCun, Hassabis |
-
-## 脚本说明
-
-| 脚本 | 用途 |
-|------|------|
-| `rss_aggregator.py` | 核心 RSS 抓取器（并发 + 缓存） |
-| `build_digest_input.py` | 构建摘要：兴趣评分 + 跨天去重 + per_source 限制 |
-| `github_trending.py` | GitHub Trending AI 项目 |
-| `arxiv_papers.py` | arXiv 论文搜索 |
-| `summarize_url.py` | 单篇文章摘要（Jina/直接抓取） |
-| `gen_status.py` | 预取状态文件生成 |
-| `prefetch_data.sh` | 统一预取入口（并行执行以上脚本） |
-
-## 配置
-
-编辑 `scripts/rss_sources.json` 管理 RSS 源：
-
-```json
-{
-  "name": "OpenAI Blog",
-  "url": "https://openai.com/blog/rss.xml",
-  "category": "company"
-}
-```
-
-## 许可
-
-MIT License
+MIT (随上游 ai-news-aggregator)。
